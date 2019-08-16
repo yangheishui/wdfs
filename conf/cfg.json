@@ -1,0 +1,14 @@
+{
+    "login": {
+        "pwd": "rp9m4wmNf+TsG9XoCK/rbg==",
+        "remember": "yes",
+        "user": "rp9m4wmNf+TsG9XoCK/rbg=="
+    },
+    "type_path": {
+        "path": "E:/CCdoe/QT/yundisk/conf/fileType"
+    },
+    "web_server": {
+        "ip": "192.168.247.129",
+        "port": "80"
+    }
+}
