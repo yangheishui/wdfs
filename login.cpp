@@ -18,30 +18,25 @@ Login::Login(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //初始化
+    // 初始化
+    // 网络请求（http）类
     m_manager = Common::getNetManager();
-
     // 此处无需指定父窗口
     m_mainWin = new MainWindow;
-
-    //窗口图片
+    // 窗口图标
     this->setWindowIcon(QIcon(":/images/logo.ico"));
-
+    m_mainWin->setWindowIcon(QIcon(":/images/logo.ico"));
     // 去掉边框
     this->setWindowFlags(this->windowFlags() | Qt::FramelessWindowHint);
-
-    //设置字体
+    // 设置当前窗口的字体信息
     this->setFont(QFont("新宋体", 12, QFont::Bold, false));
-
-    //密码
+    // 密码
     ui->log_pwd->setEchoMode(QLineEdit::Password);
     ui->reg_pwd->setEchoMode(QLineEdit::Password);
     ui->reg_surepwd->setEchoMode(QLineEdit::Password);
-
-    //当前显示窗口
+    // 当前显示的窗口
     ui->stackedWidget->setCurrentIndex(0);
     ui->log_usr->setFocus();
-
     // 数据的格式提示
     ui->log_usr->setToolTip("合法字符:[a-z|A-Z|#|@|0-9|-|_|*],字符个数: 3~16");
     ui->reg_usr->setToolTip("合法字符:[a-z|A-Z|#|@|0-9|-|_|*],字符个数: 3~16");
@@ -49,59 +44,10 @@ Login::Login(QWidget *parent) :
     ui->log_pwd->setToolTip("合法字符:[a-z|A-Z|#|@|0-9|-|_|*],字符个数: 6~18");
     ui->reg_pwd->setToolTip("合法字符:[a-z|A-Z|#|@|0-9|-|_|*],字符个数: 6~18");
     ui->reg_surepwd->setToolTip("合法字符:[a-z|A-Z|#|@|0-9|-|_|*],字符个数: 6~18");
-
-    //读取配置文件完成初始化
+    // 读取配置文件信息，并初始化
     readCfg();
-
-    // 注册
-       connect(ui->log_register_btn, &QToolButton::clicked, [=]()
-       {
-           // 切换到注册界面
-           ui->stackedWidget->setCurrentWidget(ui->register_page);
-           ui->reg_usr->setFocus();
-       });
-
-       // 设置按钮
-       connect(ui->title_widget, &TitleWidget::showSetWidget, [=]()
-       {
-           // 切换到设置界面
-           ui->stackedWidget->setCurrentWidget(ui->set_page);
-           ui->address_server->setFocus();
-       });
-
-       // 关闭按钮
-       connect(ui->title_widget, &TitleWidget::closeWindow, [=]()
-       {
-           // 如果是注册窗口
-           if(ui->stackedWidget->currentWidget() == ui->register_page)
-           {
-               // 清空数据
-               ui->reg_mail->clear();
-               ui->reg_usr->clear();
-               ui->reg_nickname->clear();
-               ui->reg_pwd->clear();
-               ui->reg_surepwd->clear();
-               ui->reg_phone->clear();
-               // 窗口切换
-               ui->stackedWidget->setCurrentWidget(ui->login_page);
-               ui->log_usr->setFocus();
-           }
-           // 如果是设置窗口
-           else if(ui->stackedWidget->currentWidget() == ui->set_page)
-           {
-               // 清空数据
-               ui->address_server->clear();
-               ui->port_server->clear();
-               // 窗口切换
-               ui->stackedWidget->setCurrentWidget(ui->login_page);
-               ui->log_usr->setFocus();
-           }
-           // 如果是登录窗口
-           else if(ui->stackedWidget->currentWidget() == ui->login_page)
-           {
-               close();
-           }
-       });
+    // 加载图片信息 - 显示文件列表的时候用，在此初始化
+    m_cm.getFileTypeList();
 
 #if 1
     // 测试数据
@@ -111,9 +57,62 @@ Login::Login(QWidget *parent) :
     ui->reg_surepwd->setText("123456");
     ui->reg_phone->setText("11111111111");
     ui->reg_mail->setText("abc@qq.com");
+
 #endif
 
-
+    // 注册
+    connect(ui->log_register_btn, &QToolButton::clicked, [=]()
+    {
+        // 切换到注册界面
+        ui->stackedWidget->setCurrentWidget(ui->register_page);
+        ui->reg_usr->setFocus();
+    });
+    // 设置按钮
+    connect(ui->title_widget, &TitleWidget::showSetWidget, [=]()
+    {
+        // 切换到设置界面
+        ui->stackedWidget->setCurrentWidget(ui->set_page);
+        ui->address_server->setFocus();
+    });
+    // 关闭按钮
+    connect(ui->title_widget, &TitleWidget::closeWindow, [=]()
+    {
+        // 如果是注册窗口
+        if(ui->stackedWidget->currentWidget() == ui->register_page)
+        {
+            // 清空数据
+            ui->reg_mail->clear();
+            ui->reg_usr->clear();
+            ui->reg_nickname->clear();
+            ui->reg_pwd->clear();
+            ui->reg_surepwd->clear();
+            ui->reg_phone->clear();
+            // 窗口切换
+            ui->stackedWidget->setCurrentWidget(ui->login_page);
+            ui->log_usr->setFocus();
+        }
+        // 如果是设置窗口
+        else if(ui->stackedWidget->currentWidget() == ui->set_page)
+        {
+            // 清空数据
+            ui->address_server->clear();
+            ui->port_server->clear();
+            // 窗口切换
+            ui->stackedWidget->setCurrentWidget(ui->login_page);
+            ui->log_usr->setFocus();
+        }
+        // 如果是登录窗口
+        else if(ui->stackedWidget->currentWidget() == ui->login_page)
+        {
+            close();
+        }
+    });
+    // 切换用户 - 重新登录
+//    connect(m_mainWin, &MainWindow::changeUser, [=]()
+//    {
+//        m_mainWin->hide();
+//        this->show();
+//    });
 }
 
 Login::~Login()
@@ -121,29 +120,31 @@ Login::~Login()
     delete ui;
 }
 
+// 登陆用户需要使用的json数据包
 QByteArray Login::setLoginJson(QString user, QString pwd)
 {
     QMap<QString, QVariant> login;
-       login.insert("user", user);
-       login.insert("pwd", pwd);
+    login.insert("user", user);
+    login.insert("pwd", pwd);
 
-       /*json数据如下
-           {
-               user:xxxx,
-               pwd:xxx
-           }
-       */
+    /*json数据如下
+        {
+            user:xxxx,
+            pwd:xxx
+        }
+    */
 
-       QJsonDocument jsonDocument = QJsonDocument::fromVariant(login);
-       if ( jsonDocument.isNull() )
-       {
-           cout << " jsonDocument.isNull() ";
-           return "";
-       }
+    QJsonDocument jsonDocument = QJsonDocument::fromVariant(login);
+    if ( jsonDocument.isNull() )
+    {
+        cout << " jsonDocument.isNull() ";
+        return "";
+    }
 
-       return jsonDocument.toJson();
+    return jsonDocument.toJson();
 }
 
+// 注册用户需要使用的json数据包
 QByteArray Login::setRegisterJson(QString userName, QString nickName, QString firstPwd, QString phone, QString email)
 {
     QMap<QString, QVariant> reg;
@@ -174,99 +175,48 @@ QByteArray Login::setRegisterJson(QString userName, QString nickName, QString fi
     return jsonDocument.toJson();
 }
 
+// 得到服务器回复的登陆状态， 状态码返回值为 "000", 或 "001"，还有登陆section
 QStringList Login::getLoginStatus(QByteArray json)
 {
+    QJsonParseError error;
+    QStringList list;
 
+    // 将来源数据json转化为JsonDocument
+    // 由QByteArray对象构造一个QJsonDocument对象，用于我们的读写操作
+    QJsonDocument doc = QJsonDocument::fromJson(json, &error);
+    if (error.error == QJsonParseError::NoError)
+    {
+        if (doc.isNull() || doc.isEmpty())
+        {
+            cout << "doc.isNull() || doc.isEmpty()";
+            return list;
+        }
+
+        if( doc.isObject() )
+        {
+            //取得最外层这个大对象
+            QJsonObject obj = doc.object();
+            cout << "服务器返回的数据" << obj;
+            //状态码
+            list.append( obj.value( "code" ).toString() );
+            //登陆token
+            list.append( obj.value( "token" ).toString() );
+        }
+    }
+    else
+    {
+        cout << "err = " << error.errorString();
+    }
+
+    return list;
 }
 
-void Login::paintEvent(QPaintEvent *event)
+// 画背景图片
+void Login::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     QPixmap pixmap(":/images/login_bk.jpg");
     painter.drawPixmap(0, 0, width(), height(), pixmap);
-}
-
-void Login::readCfg()
-{
-    //获取配置文件的值
-    QString user = m_cm.getCfgValue("login", "user");
-    QString pwd = m_cm.getCfgValue("login", "pwd");
-    QString remember = m_cm.getCfgValue("login", "remember");
-    int ret = 0;
-
-    //记住密码
-    if (remember == "yes")
-    {
-       unsigned char pwdOutData[4096];
-       int pwdLen = 0;
-
-       QByteArray tmp =  QByteArray::fromBase64(pwd.toLocal8Bit());
-      ret = DesDec((unsigned char *)tmp.data(), tmp.size(), pwdOutData, &pwdLen);
-       if (ret != 0)
-       {
-           cout << "解密失败";
-           return;
-       }
-    #ifdef _WIN32
-       ui->log_pwd->setText(QString::fromLocal8Bit((const char *)pwdOutData, pwdLen));
-    #else
-       ui->log_pwd->setText((const char *)pwdOutData);
-    #endif
-
-    }
-    else
-    {
-        ui->log_pwd->setText("");
-        ui->rember_pwd->setCheckable(false);
-    }
-
-    //处理用户
-    QByteArray userarry = QByteArray::fromBase64(user.toLocal8Bit());
-    unsigned char userDes[4096] = {0};
-    int userLen = 0;
-    ret = DesDec((unsigned char *)userarry.data(), userarry.size(), userDes, &userLen);
-    if (ret != 0)
-    {
-        cout << "解密用户失败";
-        return;
-    }
-#ifdef _WIN32
-    ui->log_usr->setText(QString::fromLocal8Bit((const char *)userDes, userLen));
-#else
-    ui->log_usr->setText((const char *)userDes);
-#endif
-
-    QString ip = m_cm.getCfgValue("web_server", ip);
-    QString port = m_cm.getCfgValue("web_server", port);
-    ui->address_server->setText(ip);
-    ui->port_server->setText(port);
-}
-
-void Login::on_set_ok_btn_clicked()
-{
-    QString ip = ui->address_server->text();
-    QString port = ui->port_server->text();
-
-    // 数据判断
-    // 服务器IP
-    // \\d 和 \\. 中第一个\是转义字符, 这里使用的是标准正则
-    QRegExp regexp(IP_REG);
-    if(!regexp.exactMatch(ip))
-    {
-        QMessageBox::warning(this, "警告", "您输入的IP格式不正确, 请重新输入!");
-        return;
-    }
-    // 端口号
-    regexp.setPattern(PORT_REG);
-    if(!regexp.exactMatch(port))
-    {
-        QMessageBox::warning(this, "警告", "您输入的端口格式不正确, 请重新输入!");
-        return;
-    }
-    // 跳转到登陆界面
-    ui->stackedWidget->setCurrentWidget(ui->login_page);
-    // 将配置信息写入配置文件中
-    m_cm.writeWebInfo(ip, port);
 }
 
 // 用户登录操作
@@ -321,7 +271,7 @@ void Login::on_login_btn_clicked()
         // 出错了
         if (reply->error() != QNetworkReply::NoError)
         {
-            cout << reply->errorString();
+            cout <<"出错啦" << endl << reply->errorString();
             //释放资源
             reply->deleteLater();
             return;
@@ -348,7 +298,7 @@ void Login::on_login_btn_clicked()
             // 当前窗口隐藏
             this->hide();
             // 主界面窗口显示
-            m_mainWin->showNormal();
+            m_mainWin->showMainWindow();
         }
         else
         {
@@ -477,4 +427,95 @@ void Login::on_register_btn_clicked()
         // 释放资源
         delete reply;
     });
+}
+
+// 用户设置操作
+void Login::on_set_ok_btn_clicked()
+{
+    QString ip = ui->address_server->text();
+    QString port = ui->port_server->text();
+
+    // 数据判断
+    // 服务器IP
+    // \\d 和 \\. 中第一个\是转义字符, 这里使用的是标准正则
+    QRegExp regexp(IP_REG);
+    if(!regexp.exactMatch(ip))
+    {
+        QMessageBox::warning(this, "警告", "您输入的IP格式不正确, 请重新输入!");
+        return;
+    }
+    // 端口号
+    regexp.setPattern(PORT_REG);
+    if(!regexp.exactMatch(port))
+    {
+        QMessageBox::warning(this, "警告", "您输入的端口格式不正确, 请重新输入!");
+        return;
+    }
+    // 跳转到登陆界面
+    ui->stackedWidget->setCurrentWidget(ui->login_page);
+    // 将配置信息写入配置文件中
+    m_cm.writeWebInfo(ip, port);
+}
+
+// 读取配置信息，设置默认登录状态，默认设置信息
+void Login::readCfg()
+{
+    QString user = m_cm.getCfgValue("login", "user");
+    QString pwd = m_cm.getCfgValue("login", "pwd");
+    QString remeber = m_cm.getCfgValue("login", "remember");
+    int ret = 0;
+
+    if(remeber == "yes")//记住密码
+    {
+        //密码解密
+        unsigned char encPwd[512] = {0};
+        int encPwdLen = 0;
+        //toLocal8Bit(), 转换为本地字符集，默认windows则为gbk编码，linux为utf-8编码
+        QByteArray tmp = QByteArray::fromBase64( pwd.toLocal8Bit());
+        ret = DesDec( (unsigned char *)tmp.data(), tmp.size(), encPwd, &encPwdLen);
+        if(ret != 0)
+        {
+            cout << "DesDec";
+            return;
+        }
+
+    #ifdef _WIN32 //如果是windows平台
+        //fromLocal8Bit(), 本地字符集转换为utf-8
+        ui->log_pwd->setText( QString::fromLocal8Bit( (const char *)encPwd, encPwdLen ) );
+    #else //其它平台
+        ui->log_pwd->setText( (const char *)encPwd );
+    #endif
+
+        ui->rember_pwd->setChecked(true);
+
+    }
+    else //没有记住密码
+    {
+        ui->log_pwd->setText("");
+        ui->rember_pwd->setChecked(false);
+    }
+
+    //用户解密
+    unsigned char encUsr[512] = {0};
+    int encUsrLen = 0;
+    //toLocal8Bit(), 转换为本地字符集，如果windows则为gbk编码，如果linux则为utf-8编码
+    QByteArray tmp = QByteArray::fromBase64( user.toLocal8Bit());
+    ret = DesDec( (unsigned char *)tmp.data(), tmp.size(), encUsr, &encUsrLen);
+    if(ret != 0)
+    {
+        cout << "DesDec";
+        return;
+    }
+
+    #ifdef _WIN32 //如果是windows平台
+        //fromLocal8Bit(), 本地字符集转换为utf-8
+        ui->log_usr->setText( QString::fromLocal8Bit( (const char *)encUsr, encUsrLen ) );
+    #else //其它平台
+        ui->log_usr->setText( (const char *)encUsr );
+    #endif
+
+    QString ip = m_cm.getCfgValue("web_server", "ip");
+    QString port = m_cm.getCfgValue("web_server", "port");
+    ui->address_server->setText(ip);
+    ui->port_server->setText(port);
 }

@@ -12,3 +12,8 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::showMainWindow()
+{
+    m_common.moveToCenter(this); //居中显示
+}
